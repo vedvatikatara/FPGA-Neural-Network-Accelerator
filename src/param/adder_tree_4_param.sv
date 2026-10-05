@@ -1,35 +1,38 @@
-module parameterized_adder_tree #( 
+module adder_tree_param #(
     parameter integer N = 8,
     parameter integer Data_Width = 8
 )(
+    input  wire signed [(2*Data_Width)-1:0] p [0:N-1],
 
-    input  wire [(2*Data_Width)-1:0] p [0:N-1],
-    output wire [(2*Data_Width + $clog2(N))-1:0] result
+    output wire signed [(2*Data_Width + $clog2(N))-1:0] result
 );
 
-    // No. of Levels in the adder tree[c:ceiling]
+    // Number of levels in the adder tree
     localparam integer Levels = $clog2(N);
 
-    // Data_Width needed to store the final result
+    // Width needed to store the final result
     localparam integer Result_Width = 2*Data_Width + Levels;
 
     // Complete adder tree
-    wire [Result_Width-1:0] tree [0:Levels][0:N-1];
+    wire signed [Result_Width-1:0] tree [0:Levels][0:N-1];
 
     genvar i;
     genvar level;
 
     // ------------------------------------------------
-    // Level 0: connect multiplier outputs to the tree
+    // Level 0: Sign-extend multiplier outputs
     // ------------------------------------------------
     generate
         for (i = 0; i < N; i = i + 1) begin : gen_input
-            assign tree[0][i] = {{Levels{1'b0}}, p[i]};
+
+            assign tree[0][i] =
+                {{Levels{p[i][(2*Data_Width)-1]}}, p[i]};
+
         end
     endgenerate
 
     // ------------------------------------------------
-    // Generate all adder Levels
+    // Generate all adder levels
     // ------------------------------------------------
     generate
         for (level = 0; level < Levels; level = level + 1) begin : gen_level
